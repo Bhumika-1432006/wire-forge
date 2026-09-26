@@ -111,6 +111,27 @@ def test_spec_validation():
     assert len(errs) == 3
 
 
+def test_scorecard_time_to_ship_and_unshipped(tmp_path):
+    import json
+
+    from wireforge.scorecard import load, render, time_to_ship
+
+    def receipt(system, last):
+        return {"system": system, "site": "https://a.test", "goal": "g", "action_type": "native-endpoint",
+                "events": [{"status": "submitted", "ts": "2026-09-26T11:00:00"},
+                           {"status": last, "ts": "2026-09-26T11:04:05"}]}
+
+    shipped, stuck = receipt("wire-forge", "shipped"), receipt("anakin-build-request", "in_progress")
+    assert time_to_ship(shipped) == "4m 05s"
+    assert time_to_ship(stuck) == "not shipped (last status: in_progress)"
+    assert time_to_ship({"events": []}) == "n/a"
+    for i, r in enumerate((shipped, stuck)):
+        (tmp_path / f"{i}.json").write_text(json.dumps(r), encoding="utf-8")
+    md = render(load(tmp_path))
+    assert "4m 05s" in md and "not shipped" in md
+    assert "No receipts recorded yet" in render(load(tmp_path / "missing"))
+
+
 def test_results_report_pairs_models_and_flags_incomplete(tmp_path):
     import csv
 
