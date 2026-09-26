@@ -16,10 +16,18 @@ from .forge import Forge
 from .verifier import Verifier
 
 CSV_FIELDS = [
-    "timestamp", "site", "goal", "model", "outcome", "action_id", "type", "emits", "repair_rounds",
+    "timestamp", "site", "goal", "model", "outcome", "action_id", "type", "declared_type", "emits", "repair_rounds",
     "forge_turns", "forge_tool_calls", "forge_tool_errors", "input_tokens", "output_tokens",
-    "verifier_model", "verifier_checks", "verifier_matched", "wall_s", "browser", "run_dir",
+    "cache_read_tokens", "cache_write_tokens", "verifier_model", "verifier_checks", "verifier_matched",
+    "verifier_input_tokens", "verifier_output_tokens", "verifier_cache_read_tokens", "wall_s", "browser", "run_dir",
 ]
+
+
+def recorded_type(declared: str, verdict: dict) -> str:
+    """A write only counts as a write when the verifier saw the site store the change."""
+    if declared == "write" and not verdict.get("write_persisted"):
+        return "read"
+    return declared
 
 
 def _slug(url: str) -> str:
@@ -50,6 +58,7 @@ def forge_action(url: str, goal: str, model: str, verifier_model: str | None = N
     t0 = time.time()
     verdict: dict = {"passed": False, "checks": [], "summary": "not verified"}
     repairs = 0
+    vstats = None
 
     with BrowserSession(headless=headless) as browser:
         backend = browser.backend
@@ -66,6 +75,7 @@ def forge_action(url: str, goal: str, model: str, verifier_model: str | None = N
                 verifier = Verifier(forge.action_dir, verifier_model, run_dir, vb)
                 verifier.run()
                 verdict = verifier.verdict or verdict
+                vstats = verifier.stats
             if verdict["passed"]:
                 outcome = "verified"
                 break
@@ -79,10 +89,16 @@ def forge_action(url: str, goal: str, model: str, verifier_model: str | None = N
 
     summary = {
         "site": url, "goal": goal, "model": model, "outcome": outcome,
-        "action_id": (forge.spec or {}).get("action_id", ""), "type": (forge.spec or {}).get("type", ""),
+        "action_id": (forge.spec or {}).get("action_id", ""),
+        "type": recorded_type((forge.spec or {}).get("type", ""), verdict),
+        "declared_type": (forge.spec or {}).get("type", ""),
         "emits": forge.emits, "repair_rounds": repairs,
         "forge_turns": stats.turns, "forge_tool_calls": stats.tool_calls, "forge_tool_errors": stats.tool_errors,
         "input_tokens": stats.input_tokens, "output_tokens": stats.output_tokens,
+        "cache_read_tokens": stats.cache_read_tokens, "cache_write_tokens": stats.cache_write_tokens,
+        "verifier_input_tokens": vstats.input_tokens if vstats else 0,
+        "verifier_output_tokens": vstats.output_tokens if vstats else 0,
+        "verifier_cache_read_tokens": vstats.cache_read_tokens if vstats else 0,
         "verifier_model": verifier_model, "verifier_checks": len(verdict.get("checks", [])),
         "verifier_matched": sum(1 for c in verdict.get("checks", []) if c.get("match")),
         "wall_s": round(time.time() - t0, 1), "browser": backend, "run_dir": run_dir.name,
@@ -97,6 +113,12 @@ def forge_action(url: str, goal: str, model: str, verifier_model: str | None = N
 def _append_csv(row: dict) -> None:
     path: Path = config.RESULTS_CSV
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        with path.open(encoding="utf-8") as f:
+            header = f.readline().strip().split(",")
+        if header != CSV_FIELDS:
+            # Columns changed: keep the old file intact under a new name instead of mixing layouts.
+            path.rename(path.with_name(f"{path.stem}.legacy-{datetime.now():%Y%m%d-%H%M%S}{path.suffix}"))
     new = not path.exists()
     with path.open("a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)

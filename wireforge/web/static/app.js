@@ -97,6 +97,7 @@ const PRESETS = [
   ["L2 · RedBus", "https://www.redbus.in/", "search buses between two cities on a date, with fares and seats left"],
   ["L3 · Myntra", "https://www.myntra.com/", "search products by keyword with brand and price filters, paginated"],
   ["L4 · Snitch cart", "https://www.snitch.com/", "add a shirt in a given size and quantity to the cart"],
+  ["Air quality · aqicn", "https://aqicn.org/city/delhi/", "live AQI and main pollutants for a given Indian city"],
   ["L5 · CPCB AQI", "https://airquality.cpcb.gov.in/ccr/", "live AQI and pollutant readings for a given city or station"],
 ];
 function initBoard() {
