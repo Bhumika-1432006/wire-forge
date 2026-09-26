@@ -92,10 +92,12 @@ function initFaq() {
 
 // ------------------------------------------------------------------ board
 const PRESETS = [
+  ["L1 · BMTC", "https://nammabmtcapp.karnataka.gov.in/", "list bus routes between two stops with timings"],
   ["L1 · VTU results", "https://results.vtu.ac.in/", "look up a student's semester results by USN"],
   ["L2 · RedBus", "https://www.redbus.in/", "search buses between two cities on a date, with fares and seats left"],
   ["L3 · Myntra", "https://www.myntra.com/", "search products by keyword with brand and price filters, paginated"],
   ["L4 · Snitch cart", "https://www.snitch.com/", "add a shirt in a given size and quantity to the cart"],
+  ["L5 · CPCB AQI", "https://airquality.cpcb.gov.in/ccr/", "live AQI and pollutant readings for a given city or station"],
 ];
 function initBoard() {
   $("#presets").innerHTML = PRESETS.map(([l], i) => `<button type="button" data-i="${i}">${esc(l)}</button>`).join("");
