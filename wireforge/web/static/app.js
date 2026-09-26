@@ -297,6 +297,15 @@ async function loadResults() {
     : `<tr><td colspan="10" class="empty">No runs recorded yet.</td></tr>`;
 }
 
+// ------------------------------------------------------------------ live chip (only a real running run)
+async function loadLiveChip() {
+  const runs = await api("/api/runs").catch(() => []);
+  const r = runs.find((x) => x.status === "running");
+  const chip = $("#live-chip");
+  chip.hidden = !r;
+  if (r) $("span", chip).textContent = `forging ${host(r.url)} now`;
+}
+
 // ------------------------------------------------------------------ boot
 initSteps();
 initFaq();
@@ -304,4 +313,5 @@ initBoard();
 loadMeta();
 loadTally();
 route();
-setInterval(() => { if (location.hash === "#board") loadRuns(); loadTally(); }, 15000);
+loadLiveChip();
+setInterval(() => { if (location.hash === "#board") loadRuns(); loadTally(); loadLiveChip(); }, 15000);

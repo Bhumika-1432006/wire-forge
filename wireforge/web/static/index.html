@@ -37,8 +37,14 @@
 <!-- =============================================================== HOME -->
 <section class="view" id="view-home">
   <div class="hero">
-    <p class="eyebrow">Wire Forge</p>
-    <h1>Any website,<br><em>an API in minutes.</em></h1>
+    <div class="floaters" aria-hidden="true">
+      <div class="fl fl-a"><p class="fl-k mono">captured · #14</p><p class="mono"><b>POST</b> /cart/add.js</p><p class="fl-s mono">x-requested-with · 200 · json</p></div>
+      <div class="fl fl-b"><p class="fl-k mono">emit_action</p><p class="fl-t">site_add_to_cart</p><p class="fl-s">type write · 3 params · strict schema</p><div class="fl-bar"><i style="width:100%"></i></div></div>
+      <div class="fl fl-c"><p class="fl-k mono">verifier · check</p><p class="fl-t">✓ item is in the cart</p><p class="fl-s">opened with the action's own session</p></div>
+      <div class="fl fl-d"><p class="fl-k mono">guard</p><p class="mono"><b>POST</b> /checkout</p><p class="fl-s mono no">refused</p></div>
+    </div>
+    <a class="pill" href="#ladder"><span class="mono">LEVEL 4</span> Write actions, proven in the cart <span aria-hidden="true">→</span></a>
+    <h1>Any website,<br><em>an <span class="mono-word">API</span> in minutes.</em></h1>
     <p class="lede">Wire Forge watches a site's own network traffic, finds the JSON endpoints behind it, writes a tested Wire action, and has a second agent prove it against the live page before it ships.</p>
     <div class="cta">
       <a class="btn primary" href="#board">Open the Forge Board</a>
@@ -135,16 +141,38 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="ladder">
     <p class="eyebrow">The demo ladder</p>
     <h2>Four levels, <em>one pipeline.</em></h2>
-    <div class="cards four">
-      <div class="card"><p class="tag">Level 1</p><h3>One endpoint</h3><p>BMTC routes, VTU results. Input in, JSON out.</p></div>
-      <div class="card"><p class="tag">Level 2</p><h3>Chained calls</h3><p>RedBus, IRCTC. Ids from one response feed the next request.</p></div>
-      <div class="card"><p class="tag">Level 3</p><h3>Hidden state</h3><p>Myntra, MakeMyTrip. Pagination, cursors and session-bound APIs.</p></div>
-      <div class="card accent"><p class="tag">Level 4</p><h3>Write actions</h3><p>Snitch, boAt, Mokobara. Resolve the size variant, add to cart, prove it in the cart.</p></div>
+    <div class="ladder">
+      <a class="lvl l1" href="#board"><div class="sheets" style="--n:1"><i></i><span class="mono">1 call</span></div>
+        <p class="lvl-k mono">Level 01 · read</p><h3 class="mono">One endpoint</h3>
+        <ul><li>BMTC routes, VTU results</li><li>Input in, JSON out</li></ul><p class="lvl-go">Try it on the board →</p></a>
+      <a class="lvl l2" href="#board"><div class="sheets" style="--n:2"><i></i><i></i><span class="mono">2 calls</span></div>
+        <p class="lvl-k mono">Level 02 · read</p><h3 class="mono">Chained calls</h3>
+        <ul><li>RedBus, IRCTC</li><li>Ids from one response feed the next</li></ul><p class="lvl-go">Try it on the board →</p></a>
+      <a class="lvl l3" href="#board"><div class="sheets" style="--n:3"><i></i><i></i><i></i><span class="mono">n pages</span></div>
+        <p class="lvl-k mono">Level 03 · read</p><h3 class="mono">Hidden state</h3>
+        <ul><li>Myntra, MakeMyTrip</li><li>Cursors, sessions, nested payloads</li></ul><p class="lvl-go">Try it on the board →</p></a>
+      <a class="lvl l4" href="#board"><div class="sheets" style="--n:4"><i></i><i></i><i></i><i></i><span class="mono">write</span></div>
+        <p class="lvl-k mono">Level 04 · write</p><h3 class="mono">Add to cart</h3>
+        <ul><li>Snitch, boAt, Mokobara</li><li>Variant, session, read-back proof</li></ul><p class="lvl-go">Try it on the board →</p></a>
     </div>
     <p class="fine">None of these sites were in the Wire catalog when we checked it on 26 September 2026.</p>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">Beyond the answer</p>
+    <h2>What every run <em>leaves behind.</em></h2>
+    <p class="section-sub">Nothing is summarised away. Each run is a folder you can open, re-run and audit.</p>
+    <div class="bento">
+      <div class="tile t1"><span class="num">01</span><p class="tk mono">spec.json</p><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="8" y="6" width="50" height="48" rx="4"/><path d="M16 18h30M16 28h22M16 38h28"/></svg><h3>The spec</h3><p>Wire-shaped: id, type, parameters, strict return schema.</p></div>
+      <div class="tile t2"><span class="num">02</span><p class="tk mono">action.py</p><svg viewBox="0 0 80 60" aria-hidden="true"><path d="M24 16 10 30l14 14M56 16l14 14-14 14M44 10 36 50"/></svg><h3>The code</h3><p>One function, the site's own endpoints, no browser.</p></div>
+      <div class="tile t3"><span class="num">03</span><p class="tk mono">test_action.py</p><svg viewBox="0 0 80 60" aria-hidden="true"><circle cx="40" cy="30" r="22"/><path d="m29 31 8 8 16-18"/></svg><h3>The test</h3><p>Runs it live and checks the schema, so drift fails loudly.</p></div>
+      <div class="tile t4"><span class="num">04</span><p class="tk mono">transcript.jsonl</p><svg viewBox="0 0 80 60" aria-hidden="true"><path d="M10 12h60M10 24h44M10 36h56M10 48h36"/></svg><h3>The transcript</h3><p>Every click, request and decision, both agents.</p></div>
+      <div class="tile t5"><span class="num">05</span><p class="tk mono">verdict.json</p><svg viewBox="0 0 80 60" aria-hidden="true"><path d="M40 6 64 16v14c0 14-10 22-24 26C26 52 16 44 16 30V16z"/><path d="m31 31 6 6 12-13"/></svg><h3>The verdict</h3><p>Each value the verifier compared with the page.</p></div>
+      <div class="tile t6"><span class="num">06</span><p class="tk mono">results.csv</p><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="8" y="8" width="64" height="44" rx="3"/><path d="M8 22h64M8 36h64M30 8v44M52 8v44"/></svg><h3>The row</h3><p>Model, outcome, turns, repairs, time. The only source of our numbers.</p></div>
+    </div>
   </section>
 
   <section class="section">
@@ -260,6 +288,7 @@
   <a href="https://github.com/thegoodengineers/wire-forge/blob/main/docs/ARCHITECTURE.md">Architecture</a>
 </footer>
 
+<a class="live-chip" id="live-chip" href="#board" hidden><i></i><span></span></a>
 <script src="/static/app.js"></script>
 </body>
 </html>
