@@ -20,7 +20,15 @@ def main() -> None:
         p.add_argument("--headed", action="store_true", help="show the local browser window")
         if name == "forge":
             p.add_argument("--model", default=config.FORGE_MODEL)
+    vw = sub.add_parser("verify-wire", help="run a catalog Wire action through our independent verifier")
+    vw.add_argument("action_id", help="an action_id from Anakin's public catalog (read-only)")
+    vw.add_argument("--site", required=True, help="the source site the verifier compares the output against")
     args = ap.parse_args()
+
+    if args.cmd == "verify-wire":
+        from .wireaction import verify_wire
+        print(json.dumps(verify_wire(args.action_id, args.site), indent=1))
+        return
 
     if args.cmd == "forge":
         result = forge_action(args.url, args.goal, args.model, headless=not args.headed)
