@@ -44,6 +44,17 @@ Each run writes `out/<site>__<model>__<time>/` with the action (`action/spec.jso
 `test_action.py`), the full transcript, the verifier's verdict, and appends a row to
 `bench/results.csv`. The verifier is always Opus 5.5, so both models are judged by the same judge.
 
+## Website
+
+```bash
+python -m wireforge.web          # http://127.0.0.1:8000
+```
+
+- **Home**: the landing page. Every number on it is read from `bench/results.csv`; with no runs it shows "—".
+- **Forge Board**: start a run (URL + goal + model) and watch it live: network capture, agent steps,
+  the emitted spec, the verifier's checks, the verdict. Starting a run needs `WIREFORGE_PASSCODE` if set.
+- **Actions**: every generated action with its spec, code and verdict. **Results**: the raw CSV. **Safety**: the guardrails.
+
 ## Demo ladder
 
 | Level | Site (not in the Wire catalog) | What makes it hard |

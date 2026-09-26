@@ -15,8 +15,11 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 from . import config
 
-BODY_LIMIT = 6000
+BODY_LIMIT = 200_000  # stored in full; network_detail pages through it, so large JSON stays parseable
+SHOW_LIMIT = 6000  # characters shown per network_detail call
 MAX_ENTRIES = 400
+# Map tiles, images and fonts arrive as fetch/xhr on some sites and bury the data calls.
+BINARY_TYPES = ("image/", "font/", "video/", "audio/", "protobuf", "octet-stream", "application/pdf")
 NOISE_HOSTS = (
     "google-analytics", "googletagmanager", "doubleclick", "facebook", "hotjar",
     "clarity.ms", "segment", "sentry", "newrelic", "nr-data", "adservice", "criteo",
@@ -71,10 +74,19 @@ class NetEntry:
     body: str | None
     t: float = field(default_factory=time.time)
 
+    def is_graphql(self) -> str:
+        post = self.post_data or ""
+        if "persistedQuery" in post or "persistedQuery" in self.url:
+            return "graphql-persisted"
+        if "graphql" in self.url.lower() or post.lstrip().startswith(('{"query"', '[{"query"', '{"operationName"')):
+            return "graphql"
+        return ""
+
     def summary(self) -> str:
         size = len(self.body) if self.body else 0
         post = f" body={len(self.post_data)}B" if self.post_data else ""
-        return f"#{self.idx} {self.method} {self.status} {self.url[:160]} [{self.content_type[:30]}] resp={size}B{post}"
+        tag = f" <{self.is_graphql()}>" if self.is_graphql() else ""
+        return f"#{self.idx} {self.method} {self.status} {self.url[:160]} [{self.content_type[:30]}] resp={size}B{post}{tag}"
 
 
 class BrowserSession:
@@ -87,6 +99,8 @@ class BrowserSession:
         self.page: Page | None = None
         self.net: list[NetEntry] = []
         self._inflight = 0
+        self._shared_context = False  # isolated() fell back to the parent's context
+        self._saved_cookies: list[dict] = []
         self.backend = "anakin" if config.ANAKIN_API_KEY else "local-chromium"
 
     def isolated(self) -> "BrowserSession":
@@ -98,10 +112,19 @@ class BrowserSession:
         if self.parent:
             self.browser = self.parent.browser
             assert self.browser and self.parent.context
-            self.context = self.browser.new_context(
-                user_agent=self.parent.page.evaluate("navigator.userAgent") if self.parent.page else None,
-                viewport={"width": 1366, "height": 900},
-            )
+            try:
+                self.context = self.browser.new_context(
+                    user_agent=self.parent.page.evaluate("navigator.userAgent") if self.parent.page else None,
+                    viewport={"width": 1366, "height": 900},
+                )
+            except Exception:
+                # Some CDP endpoints (remote browsers) cannot create extra contexts. Reuse the parent's
+                # context but wipe its cookies so the verifier never inherits the forge's session; the
+                # forge's cookies are put back on exit.
+                self.context = self.parent.context
+                self._shared_context = True
+                self._saved_cookies = self.context.cookies()
+                self.context.clear_cookies()
             self.page = self.context.new_page()
             self._attach(self.page)
             return self
@@ -128,7 +151,16 @@ class BrowserSession:
 
     def __exit__(self, *exc) -> None:
         if self.parent:
-            if self.context:
+            if self._shared_context:
+                try:
+                    if self.page:
+                        self.page.close()
+                finally:
+                    assert self.context
+                    self.context.clear_cookies()
+                    if self._saved_cookies:
+                        self.context.add_cookies(self._saved_cookies)
+            elif self.context:
                 self.context.close()
             return
         try:
@@ -158,6 +190,17 @@ class BrowserSession:
         if self._tracked(req):
             self._inflight = max(0, self._inflight - 1)
 
+    @staticmethod
+    def _post_text(req) -> str | None:
+        """Request body as text. req.post_data decodes as UTF-8 and raises on binary bodies
+        (gzip-compressed beacons, for example), which used to drop the whole entry."""
+        try:
+            data = req.post_data
+        except UnicodeDecodeError:
+            raw = req.post_data_buffer or b""
+            return f"<binary body, {len(raw)} bytes>"
+        return data[:BODY_LIMIT] if data else None
+
     def _on_response(self, resp) -> None:
         req = resp.request
         if req.resource_type not in ("xhr", "fetch", "document"):
@@ -166,6 +209,8 @@ class BrowserSession:
         if any(n in host for n in NOISE_HOSTS):
             return
         ctype = resp.headers.get("content-type", "")
+        if any(b in ctype for b in BINARY_TYPES):
+            return
         body = None
         if req.resource_type != "document" and any(k in ctype for k in ("json", "text", "javascript", "xml", "graphql")):
             try:
@@ -176,7 +221,7 @@ class BrowserSession:
         entry = NetEntry(
             idx=len(self.net), method=req.method, url=req.url, status=resp.status,
             resource_type=req.resource_type, content_type=ctype, request_headers=headers,
-            post_data=(req.post_data or None) and req.post_data[:BODY_LIMIT], body=body,
+            post_data=self._post_text(req), body=body,
         )
         if len(self.net) < MAX_ENTRIES:
             self.net.append(entry)
@@ -244,11 +289,18 @@ class BrowserSession:
         ]
         return "\n".join(rows[-120:]) or "(no matching requests)"
 
-    def network_detail(self, idx: int) -> str:
+    def network_detail(self, idx: int, offset: int = 0) -> str:
+        """Full request, and the response body from `offset`, SHOW_LIMIT characters at a time."""
         e = self.net[idx]
+        body = e.body or ""
+        part = body[offset:offset + SHOW_LIMIT]
+        more = len(body) - offset - len(part)
         return json.dumps({
             "method": e.method, "url": e.url, "status": e.status, "content_type": e.content_type,
-            "request_headers": e.request_headers, "post_data": e.post_data, "response_body": e.body,
+            "kind": e.is_graphql() or None, "request_headers": e.request_headers,
+            "post_data": (e.post_data or "")[:SHOW_LIMIT] or None,
+            "response_length": len(body), "response_offset": offset, "response_body": part,
+            "more": f"{more} more characters: call again with offset={offset + len(part)}" if more > 0 else None,
         }, indent=1)
 
     def embedded_json(self) -> str:

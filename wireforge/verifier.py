@@ -26,7 +26,10 @@ Compare concrete values: names, prices, counts, ids, dates. Spot-check at least 
 example). This loads the action's own session cookies into your browser. Confirm the page shows the change, \
 such as the item and quantity the action reported. If the site keeps the state only in local storage and the \
 page cannot show it, say so and judge from the site's own state endpoint instead.
-5. Call submit_verdict. Pass only if every check matched. Small differences a live site can explain, such as \
+5. Call submit_verdict. For a write action, set write_persisted to true only if you saw the change stored by the \
+site itself (its page or its own endpoint, read with the action's session). If the action only computed a result \
+and nothing was stored on the site, set it to false, even if every value it returned is correct. \
+Pass only if every check matched. Small differences a live site can explain, such as \
 a price that changed between runs, are fine; say so in the check's note.
 
 Never go to checkout, pay, or place an order."""
@@ -37,6 +40,7 @@ VERDICT_SCHEMA = _obj({
         {"what": S, "action_value": S, "page_value": S, "match": B, "note": S},
         ["what", "action_value", "page_value", "match"])},
     "summary": S,
+    "write_persisted": {"type": "boolean", "description": "Write actions only: did you see the change stored by the site?"},
 }, ["passed", "checks", "summary"])
 
 
@@ -81,7 +85,9 @@ class Verifier:
         self.browser.add_cookies(cookies)
         return self.browser.goto(url)
 
-    def submit(self, passed: bool, checks: list, summary: str) -> str:
+    def submit(self, passed: bool, checks: list, summary: str, write_persisted: bool | None = None) -> str:
+        if self.spec.get("type") == "write" and write_persisted is None:
+            return "Refused: this is a write action; say whether the change was stored by the site (write_persisted)."
         if self.runs < 2:
             return "Refused: run the action at least twice (test_params plus your own params) before judging."
         if passed and not any(c.get("match") for c in checks):
@@ -89,7 +95,7 @@ class Verifier:
         # A mismatch may only coexist with a pass when the verifier wrote down why it is acceptable.
         if passed and any(not c.get("match") and not (c.get("note") or "").strip() for c in checks):
             passed = False
-        self.verdict = {"passed": passed, "checks": checks, "summary": summary}
+        self.verdict = {"passed": passed, "checks": checks, "summary": summary, "write_persisted": write_persisted}
         self.agent.finished = True
         return "Verdict recorded."
 
@@ -98,7 +104,7 @@ class Verifier:
         code = (self.action_dir / "action.py").read_text(encoding="utf-8")
         params = (self.action_dir / "test_params.json").read_text(encoding="utf-8")
         task = f"Spec:\n{spec_text}\n\ntest_params:\n{params}\n\nCode:\n```python\n{code}\n```\nVerify this action."
-        stats = self.agent.run(task, max_turns=40)
+        stats = self.stats = self.agent.run(task, max_turns=40)
         if self.verdict is None:
             self.verdict = {"passed": False, "checks": [], "summary": f"verifier stopped without a verdict ({stats.stop})"}
         return stats

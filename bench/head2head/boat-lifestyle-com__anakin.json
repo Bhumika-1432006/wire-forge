@@ -1,0 +1,23 @@
+{
+ "system": "anakin-build-request",
+ "site": "boat-lifestyle.com",
+ "goal": "add a product in a given colour variant and quantity to the cart, then return the cart contents",
+ "events": [
+  {
+   "status": "submitted",
+   "ts": "2026-09-26T09:05:30+00:00"
+  },
+  {
+   "status": "shipped",
+   "ts": "2026-09-26T09:10:44+00:00"
+  }
+ ],
+ "action_type": "native-endpoint",
+ "action_id": "act_boat_lifestyle_com_add_to_cart",
+ "inputs": "raw Shopify variant_id (integer), quantity",
+ "works": true,
+ "cost_per_call": "25 credits to build, 1 credit per call",
+ "verification": "builder's internal auto-test (not visible); our run via POST /v1/wire/task completed in 9.8 s, item added",
+ "failure": "none",
+ "source": "GET /v1/wire/build-requests/ec2c7992-b2a8-4171-9eec-ba543b32b814"
+}
