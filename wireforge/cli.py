@@ -1,5 +1,6 @@
 """wireforge forge <url> --goal "..."      build one action with the model under test
-wireforge compare <url> --goal "..."    same site with the baseline model, then the new one"""
+wireforge compare <url> --goal "..."    same site with the baseline model, then the new one
+wireforge check-browser [url]           verify the browser backend (Anakin CDP if ANAKIN_API_KEY is set)"""
 
 from __future__ import annotations
 
@@ -20,7 +21,13 @@ def main() -> None:
         p.add_argument("--headed", action="store_true", help="show the local browser window")
         if name == "forge":
             p.add_argument("--model", default=config.FORGE_MODEL)
+    cb = sub.add_parser("check-browser")
+    cb.add_argument("url", nargs="?", default="https://example.com")
     args = ap.parse_args()
+
+    if args.cmd == "check-browser":
+        from .browsercheck import main as check_main
+        raise SystemExit(check_main(args.url))
 
     if args.cmd == "forge":
         result = forge_action(args.url, args.goal, args.model, headless=not args.headed)
