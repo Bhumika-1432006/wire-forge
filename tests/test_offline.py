@@ -83,3 +83,11 @@ def test_spec_validation():
     errs = validate_spec(dict(GOOD_SPEC, action_id="Bad Id", type="delete",
                               return_schema={"type": "object"}))
     assert len(errs) == 3
+
+
+def test_check_browser_passes_on_local_chromium(site_url):
+    from wireforge.browsercheck import check_browser
+
+    results = check_browser(site_url + "/index.html")
+    assert all(ok for _, ok, _ in results), results
+    assert {n for n, _, _ in results} >= {"connect", "isolated session", "forge cookies survive"}
