@@ -87,6 +87,8 @@ class BrowserSession:
         self.page: Page | None = None
         self.net: list[NetEntry] = []
         self._inflight = 0
+        self._shared_context = False  # isolated() fell back to the parent's context
+        self._saved_cookies: list[dict] = []
         self.backend = "anakin" if config.ANAKIN_API_KEY else "local-chromium"
 
     def isolated(self) -> "BrowserSession":
@@ -98,10 +100,19 @@ class BrowserSession:
         if self.parent:
             self.browser = self.parent.browser
             assert self.browser and self.parent.context
-            self.context = self.browser.new_context(
-                user_agent=self.parent.page.evaluate("navigator.userAgent") if self.parent.page else None,
-                viewport={"width": 1366, "height": 900},
-            )
+            try:
+                self.context = self.browser.new_context(
+                    user_agent=self.parent.page.evaluate("navigator.userAgent") if self.parent.page else None,
+                    viewport={"width": 1366, "height": 900},
+                )
+            except Exception:
+                # Some CDP endpoints (remote browsers) cannot create extra contexts. Reuse the parent's
+                # context but wipe its cookies so the verifier never inherits the forge's session; the
+                # forge's cookies are put back on exit.
+                self.context = self.parent.context
+                self._shared_context = True
+                self._saved_cookies = self.context.cookies()
+                self.context.clear_cookies()
             self.page = self.context.new_page()
             self._attach(self.page)
             return self
@@ -128,7 +139,16 @@ class BrowserSession:
 
     def __exit__(self, *exc) -> None:
         if self.parent:
-            if self.context:
+            if self._shared_context:
+                try:
+                    if self.page:
+                        self.page.close()
+                finally:
+                    assert self.context
+                    self.context.clear_cookies()
+                    if self._saved_cookies:
+                        self.context.add_cookies(self._saved_cookies)
+            elif self.context:
                 self.context.close()
             return
         try:
