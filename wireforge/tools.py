@@ -31,11 +31,14 @@ def browser_tools(b: BrowserSession) -> list[Tool]:
              lambda ref, text, press_enter=False: b.fill(ref, text, press_enter)),
         Tool("select", "Choose an option in a <select> by ref.",
              _obj({"ref": S, "value": S}, ["ref", "value"]), lambda ref, value: b.select(ref, value)),
-        Tool("network_log", "One-line summaries of captured requests. Filter by index, URL/body substring, or JSON only.",
+        Tool("network_log", "One-line summaries of captured requests (images, fonts and map tiles are left out; "
+             "GraphQL calls are tagged). Filter by index, URL/body substring, or JSON only.",
              _obj({"since": I, "contains": S, "only_json": B}, []),
              lambda since=0, contains="", only_json=False: b.network_log(since, contains, only_json)),
-        Tool("network_detail", "Full request (method, url, headers, post body) and response body for one captured request.",
-             _obj({"idx": I}, ["idx"]), lambda idx: b.network_detail(idx)),
+        Tool("network_detail",
+             "Full request (method, url, headers, post body) and the response body for one captured request. "
+             "Long bodies come in pages: pass offset to read further.",
+             _obj({"idx": I, "offset": I}, ["idx"]), lambda idx, offset=0: b.network_detail(idx, offset)),
         Tool("embedded_json", "JSON the page ships inline (__NEXT_DATA__, ld+json, application/json scripts).",
              _obj({}, []), lambda: b.embedded_json()),
         Tool("http_request",
