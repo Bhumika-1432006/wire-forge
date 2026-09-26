@@ -21,9 +21,18 @@ def main() -> None:
         p.add_argument("--headed", action="store_true", help="show the local browser window")
         if name == "forge":
             p.add_argument("--model", default=config.FORGE_MODEL)
+    vw = sub.add_parser("verify-wire", help="run a catalog Wire action through our independent verifier")
+    vw.add_argument("action_id", help="an action_id from Anakin's public catalog (read-only)")
+    vw.add_argument("--site", required=True, help="the source site the verifier compares the output against")
+    vw.add_argument("--catalog", default="", help="catalog slug; looks the action up in the catalog's own list")
     cb = sub.add_parser("check-browser")
     cb.add_argument("url", nargs="?", default="https://example.com")
     args = ap.parse_args()
+
+    if args.cmd == "verify-wire":
+        from .wireaction import verify_wire
+        print(json.dumps(verify_wire(args.action_id, args.site, catalog=args.catalog), indent=1))
+        return
 
     if args.cmd == "check-browser":
         from .browsercheck import main as check_main
