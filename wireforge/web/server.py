@@ -122,6 +122,22 @@ def tally() -> dict:
     }
 
 
+@app.get("/api/head2head")
+def head2head() -> list[dict]:
+    """Receipts from bench/head2head/*.json (the scorecard's format), with seconds to ship."""
+    from datetime import datetime
+
+    from ..scorecard import SHIPPED, load
+
+    out = []
+    for r in load():
+        ev = r.get("events", [])
+        shipped = next((e["ts"] for e in ev if e["status"] == SHIPPED), None)
+        secs = (datetime.fromisoformat(shipped) - datetime.fromisoformat(ev[0]["ts"])).total_seconds() if ev and shipped else None
+        out.append({**r, "seconds_to_ship": secs})
+    return out
+
+
 @app.get("/api/results")
 def results() -> list[dict]:
     return _csv_rows()[::-1]

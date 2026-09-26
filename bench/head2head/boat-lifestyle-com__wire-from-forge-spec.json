@@ -1,0 +1,23 @@
+{
+ "system": "wire-from-forge-spec",
+ "site": "boat-lifestyle.com",
+ "goal": "build-request goal generated from the verified Wire Forge spec (scripts/spec_to_wire.py)",
+ "events": [
+  {
+   "status": "submitted",
+   "ts": "2026-09-26T09:09:24+00:00"
+  },
+  {
+   "status": "shipped",
+   "ts": "2026-09-26T09:14:05+00:00"
+  }
+ ],
+ "action_type": "native-endpoint",
+ "action_id": "act_boat_lifestyle_com_add_to_cart",
+ "inputs": "product, colour, quantity (Wire Forge's interface)",
+ "works": true,
+ "cost_per_call": "25 credits to build, 1 credit per call",
+ "verification": "ran via POST /v1/wire/task with product/colour/quantity: completed in 12.6 s, item added",
+ "failure": "none",
+ "source": "GET /v1/wire/build-requests/848c33fa-63de-4312-ae60-01cfe71894f3"
+}
