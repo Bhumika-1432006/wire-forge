@@ -83,3 +83,27 @@ def test_spec_validation():
     errs = validate_spec(dict(GOOD_SPEC, action_id="Bad Id", type="delete",
                               return_schema={"type": "object"}))
     assert len(errs) == 3
+
+
+def test_results_report_pairs_models_and_flags_incomplete(tmp_path):
+    import csv
+
+    from wireforge import config
+    from wireforge.pipeline import CSV_FIELDS
+    from wireforge.report import load, render
+
+    def row(site, model, outcome):
+        return {**dict.fromkeys(CSV_FIELDS, ""), "site": site, "goal": "g", "model": model, "outcome": outcome}
+
+    path = tmp_path / "results.csv"
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        w.writerow(row("https://a.test", config.BASELINE_MODEL, "no_working_action"))
+        w.writerow(row("https://a.test", config.FORGE_MODEL, "verified"))
+        w.writerow(row("https://b.test", config.FORGE_MODEL, "verified"))
+    md = render(load(path))
+    a, b = md.split("## https://b.test")
+    assert "no_working_action" in a and "verified" in a and "Incomplete" not in a
+    assert "Incomplete" in b
+    assert "No runs recorded yet" in render(load(tmp_path / "missing.csv"))
