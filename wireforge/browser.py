@@ -15,8 +15,11 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 from . import config
 
-BODY_LIMIT = 6000
+BODY_LIMIT = 200_000  # stored in full; network_detail pages through it, so large JSON stays parseable
+SHOW_LIMIT = 6000  # characters shown per network_detail call
 MAX_ENTRIES = 400
+# Map tiles, images and fonts arrive as fetch/xhr on some sites and bury the data calls.
+BINARY_TYPES = ("image/", "font/", "video/", "audio/", "protobuf", "octet-stream", "application/pdf")
 NOISE_HOSTS = (
     "google-analytics", "googletagmanager", "doubleclick", "facebook", "hotjar",
     "clarity.ms", "segment", "sentry", "newrelic", "nr-data", "adservice", "criteo",
@@ -71,10 +74,19 @@ class NetEntry:
     body: str | None
     t: float = field(default_factory=time.time)
 
+    def is_graphql(self) -> str:
+        post = self.post_data or ""
+        if "persistedQuery" in post or "persistedQuery" in self.url:
+            return "graphql-persisted"
+        if "graphql" in self.url.lower() or post.lstrip().startswith(('{"query"', '[{"query"', '{"operationName"')):
+            return "graphql"
+        return ""
+
     def summary(self) -> str:
         size = len(self.body) if self.body else 0
         post = f" body={len(self.post_data)}B" if self.post_data else ""
-        return f"#{self.idx} {self.method} {self.status} {self.url[:160]} [{self.content_type[:30]}] resp={size}B{post}"
+        tag = f" <{self.is_graphql()}>" if self.is_graphql() else ""
+        return f"#{self.idx} {self.method} {self.status} {self.url[:160]} [{self.content_type[:30]}] resp={size}B{post}{tag}"
 
 
 class BrowserSession:
@@ -166,6 +178,8 @@ class BrowserSession:
         if any(n in host for n in NOISE_HOSTS):
             return
         ctype = resp.headers.get("content-type", "")
+        if any(b in ctype for b in BINARY_TYPES):
+            return
         body = None
         if req.resource_type != "document" and any(k in ctype for k in ("json", "text", "javascript", "xml", "graphql")):
             try:
@@ -244,11 +258,18 @@ class BrowserSession:
         ]
         return "\n".join(rows[-120:]) or "(no matching requests)"
 
-    def network_detail(self, idx: int) -> str:
+    def network_detail(self, idx: int, offset: int = 0) -> str:
+        """Full request, and the response body from `offset`, SHOW_LIMIT characters at a time."""
         e = self.net[idx]
+        body = e.body or ""
+        part = body[offset:offset + SHOW_LIMIT]
+        more = len(body) - offset - len(part)
         return json.dumps({
             "method": e.method, "url": e.url, "status": e.status, "content_type": e.content_type,
-            "request_headers": e.request_headers, "post_data": e.post_data, "response_body": e.body,
+            "kind": e.is_graphql() or None, "request_headers": e.request_headers,
+            "post_data": (e.post_data or "")[:SHOW_LIMIT] or None,
+            "response_length": len(body), "response_offset": offset, "response_body": part,
+            "more": f"{more} more characters: call again with offset={offset + len(part)}" if more > 0 else None,
         }, indent=1)
 
     def embedded_json(self) -> str:
