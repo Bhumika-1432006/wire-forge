@@ -337,3 +337,4 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--paper-2); border-radius:
 
 /* referee audit cards */
 .referee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px}
+.bar-fill.part{background:linear-gradient(90deg,#c2410c,#f59e0b)}

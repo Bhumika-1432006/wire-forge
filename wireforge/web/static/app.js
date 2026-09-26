@@ -52,16 +52,17 @@ function renderModelChart(rows) {
   // Bars come straight from /api/tally (which reads only bench/results.csv); no chart without data.
   const box = $("#model-chart");
   if (!box) return;
-  const withTime = rows.filter(([, v]) => v.median_min != null);
-  box.hidden = withTime.length < 1;
+  box.hidden = rows.length < 1;
   if (box.hidden) return;
-  const max = Math.max(...withTime.map(([, v]) => v.median_min));
-  $("#model-bars").innerHTML = withTime.map(([m, v]) => `
+  $("#model-bars").innerHTML = rows.map(([m, v]) => {
+    const rate = v.runs ? v.verified / v.runs : 0;
+    return `
     <div class="bar-row">
       <span class="bar-label mono">${esc(m)}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, (v.median_min / max) * 100)}%"></div></div>
-      <span class="bar-value">${esc(v.median_min)} min · ${v.verified}/${v.runs} verified</span>
-    </div>`).join("");
+      <div class="bar-track"><div class="bar-fill ${rate < 1 ? "part" : ""}" style="width:${Math.max(4, rate * 100)}%"></div></div>
+      <span class="bar-value">${v.verified}/${v.runs} verified${v.median_min != null ? ` · median ${esc(v.median_min)} min` : ""}${v.avg_repairs ? ` · ${esc(v.avg_repairs)} avg repairs` : ""}</span>
+    </div>`;
+  }).join("");
 }
 
 async function loadReferee() {
