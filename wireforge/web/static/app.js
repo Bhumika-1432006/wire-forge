@@ -64,6 +64,24 @@ function renderModelChart(rows) {
     </div>`).join("");
 }
 
+async function loadReferee() {
+  // Catalog audits are ordinary runs in out/ whose ids start with wire-catalog__.
+  const box = $("#referee-cards");
+  if (!box) return;
+  const runs = (await api("/api/runs").catch(() => [])).filter((r) => r.id.startsWith("wire-catalog__"));
+  if (!runs.length) return;
+  const cards = await Promise.all(runs.slice(0, 6).map(async (r) => {
+    const d = await api(`/api/runs/${encodeURIComponent(r.id)}`).catch(() => null);
+    const s = d?.summary, v = d?.verdict;
+    if (!s) return "";
+    return `<div class="a-card"><span class="status ${s.passed ? "verified" : "error"}">${s.passed ? "certified" : "failed audit"}</span>
+      <h4>${esc(s.action_id)}</h4>
+      <p>${esc(host(s.site))} · ${esc(s.matched)}/${esc(s.checks)} checks matched · ${esc(s.wall_s)}s</p>
+      <p class="g">${esc((v?.summary || "").slice(0, 180))}…</p></div>`;
+  }));
+  box.innerHTML = cards.join("") || box.innerHTML;
+}
+
 async function loadMeta() {
   meta = await api("/api/meta").catch(() => ({}));
   $$('[data-meta="version"]').forEach((el) => (el.textContent = `v${meta.version || "?"}`));
@@ -332,6 +350,7 @@ initFaq();
 initBoard();
 loadMeta();
 loadTally();
+loadReferee();
 route();
 loadLiveChip();
 setInterval(() => { if (location.hash === "#board") loadRuns(); loadTally(); loadLiveChip(); }, 15000);
