@@ -13,6 +13,8 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("WIREFORGE_RESULTS_CSV", str(tmp_path / "results.csv"))
     monkeypatch.setenv("WIREFORGE_PASSCODE", "letmein")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # Never read the developer's .env here: a real key would let this test start a paid run.
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: False)
     import wireforge.config, wireforge.pipeline, wireforge.web.server as server
     importlib.reload(wireforge.config)
     importlib.reload(wireforge.pipeline)

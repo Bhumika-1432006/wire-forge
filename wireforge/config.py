@@ -18,6 +18,9 @@ FORGE_MODEL = os.getenv("WIREFORGE_MODEL", "claude-opus-5-5")
 BASELINE_MODEL = os.getenv("WIREFORGE_BASELINE_MODEL", "claude-opus-5")
 EFFORT = os.getenv("WIREFORGE_EFFORT", "high")
 
+# Needed only when the API key is not scoped to a workspace (the API then asks for this header).
+ANTHROPIC_WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "")
+
 ANAKIN_API_KEY = os.getenv("ANAKIN_API_KEY", "")
 ANAKIN_CDP_URL = "wss://api.anakin.io/v1/browser-connect"
 
