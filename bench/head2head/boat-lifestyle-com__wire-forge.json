@@ -1,0 +1,24 @@
+{
+ "system": "wire-forge",
+ "site": "boat-lifestyle.com",
+ "goal": "add a product in a given colour variant and quantity to the cart, then return the cart contents",
+ "events": [
+  {
+   "status": "submitted",
+   "ts": "2026-09-26T08:48:08+00:00"
+  },
+  {
+   "status": "shipped",
+   "ts": "2026-09-26T08:51:26+00:00"
+  }
+ ],
+ "action_type": "native-endpoint",
+ "action_id": "boat_lifestyle_add_to_cart",
+ "model": "claude-opus-5-5",
+ "inputs": "product handle or URL, colour name, quantity",
+ "works": true,
+ "cost_per_call": "no Anakin credits",
+ "verification": "independent verifier: 7/7 values matched the live cart; write stored on the site",
+ "failure": "none",
+ "source": "out/www-boat-lifestyle-com__claude-opus-5-5__20260926-141808"
+}

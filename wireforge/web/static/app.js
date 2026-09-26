@@ -346,7 +346,44 @@ async function loadLiveChip() {
   if (r) $("span", chip).textContent = `forging ${host(r.url)} now`;
 }
 
+// ------------------------------------------------------------------ head-to-head (bench/head2head receipts only)
+const H2H_LABEL = { "wire-forge": "Wire Forge", "anakin-build-request": "Wire build-request", "wire-from-forge-spec": "Wire, rebuilt from our spec" };
+const fmtSecs = (s) => (s == null ? "not shipped" : `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, "0")}s`);
+
+async function loadHead2Head() {
+  const receipts = await api("/api/head2head").catch(() => []);
+  const race = receipts.filter((r) => r.system === "wire-forge" || r.system === "anakin-build-request");
+  if (!race.length) return;
+  const max = Math.max(...race.map((r) => r.seconds_to_ship || 0), 1);
+  const bySite = {};
+  race.forEach((r) => (bySite[r.site] = bySite[r.site] || []).push(r));
+  $("#h2h").innerHTML = Object.entries(bySite).map(([site, rs]) => {
+    rs.sort((a, b) => (a.seconds_to_ship ?? 1e9) - (b.seconds_to_ship ?? 1e9));
+    return `<div class="h2h-site"><p class="panel-title">${esc(site)} · ${esc(rs[0].goal)}</p>${rs.map((r, i) => `
+      <div class="h2h-row ${r.system === "wire-forge" ? "us" : ""}">
+        <div class="h2h-name">${esc(H2H_LABEL[r.system] || r.system)}${i === 0 && rs.length > 1 ? ' <span class="status verified">faster</span>' : ""}</div>
+        <div class="h2h-bar"><i style="width:${((r.seconds_to_ship || 0) / max) * 100}%"></i><span class="mono">${esc(fmtSecs(r.seconds_to_ship))}</span></div>
+        <dl class="h2h-facts">
+          <dt>works</dt><dd>${r.works ? "yes" : "no"}</dd>
+          <dt>inputs</dt><dd>${esc(r.inputs || "?")}</dd>
+          <dt>verification</dt><dd>${esc(r.verification || "none")}</dd>
+          <dt>cost</dt><dd>${esc(r.cost_per_call || "?")}</dd>
+        </dl>
+      </div>`).join("")}<p class="fine">One site, one run each. Sources: ${rs.map((r) => `<span class="mono">${esc(r.source || "")}</span>`).join(" · ")}</p></div>`;
+  }).join("");
+  const loop = receipts.find((r) => r.system === "wire-from-forge-spec");
+  if (loop) {
+    const box = $("#h2h-loop");
+    box.hidden = false;
+    box.innerHTML = `<p class="eyebrow">Then we handed it back</p>
+      <h3>Wire rebuilt its action <em>from our verified spec.</em></h3>
+      <p>${esc(loop.goal)}. Wire's catalog action <span class="mono">${esc(loop.action_id)}</span> now takes
+      <b>${esc(loop.inputs)}</b>, shipped in ${esc(fmtSecs(loop.seconds_to_ship))}. ${esc(loop.verification)}.</p>`;
+  }
+}
+
 // ------------------------------------------------------------------ boot
+loadHead2Head();
 initSteps();
 initFaq();
 initBoard();
