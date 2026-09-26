@@ -56,6 +56,32 @@ def test_isolated_session_does_not_share_cookies(site_url):
         assert b.cookies()[0]["name"] == "sid"
 
 
+class _NoNewContext:
+    """Stands in for a remote CDP browser that refuses to create extra contexts."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def new_context(self, *a, **kw):
+        raise RuntimeError("Browser.createBrowserContext not supported")
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+def test_isolated_falls_back_to_cleared_cookies_and_restores_parent(site_url):
+    with BrowserSession() as b:
+        b.goto(site_url + "/index.html")
+        b.add_cookies([{"name": "sid", "value": "1", "url": site_url}])
+        b.browser = _NoNewContext(b.browser)
+        with b.isolated() as v:
+            assert v._shared_context
+            assert v.cookies() == []  # the verifier must not see the forge's session
+            v.goto(site_url + "/index.html")
+        assert [c["name"] for c in b.cookies()] == ["sid"]  # forge's session is back
+        assert len(b.context.pages) == 1  # verifier page was closed
+
+
 def test_harness_runs_action_and_schema_check(tmp_path, site_url):
     action = tmp_path / "action.py"
     action.write_text(
