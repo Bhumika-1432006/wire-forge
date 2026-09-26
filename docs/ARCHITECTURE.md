@@ -49,6 +49,8 @@ Loop limits: forge turns `WIREFORGE_MAX_TURNS` (60), repair rounds `WIREFORGE_MA
 | `wireforge/verifier.py` | Verifier agent + `submit_verdict` rules | Refuses a verdict until the action has run at least twice. A pass needs at least one matched check. An unexplained mismatch turns a pass into a fail. |
 | `wireforge/pipeline.py` | Orchestration, repair loop, CSV row | Verifier model is fixed (`FORGE_MODEL`) so both models are judged by the same judge. |
 | `wireforge/cli.py` | `forge` and `compare` commands | |
+| `wireforge/web/server.py` | FastAPI: serves the site, JSON API over `out/` and `bench/results.csv`, starts runs in a background thread, streams `transcript.jsonl` as server-sent events | One run at a time (lock). `POST /api/runs` needs `WIREFORGE_PASSCODE` when set. `/api/tally` is the only source of numbers on the site. Run ids are resolved inside `OUT_DIR` only. |
+| `wireforge/web/static/` | `index.html`, `app.css`, `app.js`: hash-routed single page (Home, Forge Board, Actions, Results, Safety) | Everything from a run is untrusted and goes through `esc()`; never put it into `innerHTML` raw. |
 
 ## 4. Contracts (do not change without telling the team)
 
@@ -69,7 +71,9 @@ action/spec.json          Wire-shaped spec + return_schema + endpoints
 action/action.py          the action
 action/test_params.json   params that worked at build time
 action/test_action.py     auto-generated pytest (live call + schema check)
-transcript.jsonl          every tool call, thinking summary and text, for both agents
+request.json              url, goal, model, verifier model
+transcript.jsonl          every tool call, thinking summary and text, for both agents, plus pipeline
+                          stage events (start, trace, verify, repair, done, error) the board streams
 last_run.json             last harness output from the forge
 verdict.json              verifier checks and result
 summary.json              the row written to bench/results.csv
@@ -92,7 +96,11 @@ cp .env.example .env    # ANTHROPIC_API_KEY required, ANAKIN_API_KEY optional
 python -m pytest        # offline tests, no key needed
 python -m wireforge forge   <url> --goal "..." [--headed] [--model claude-opus-5]
 python -m wireforge compare <url> --goal "..."
+python -m wireforge.web      # website on :8000
 ```
+
+`WIREFORGE_OUT_DIR` and `WIREFORGE_RESULTS_CSV` move the outputs, for example to test the UI against
+fixture data without touching `bench/results.csv`.
 
 ## 7. Demo sites (checked against the live Wire catalog, 26 Sep 2026)
 
@@ -116,8 +124,10 @@ Take one, put your name next to it in the PR, one branch per task.
 2. **Anakin Browser API** — test with `ANAKIN_API_KEY`; confirm `connect_over_cdp` + `isolated()`
    (`new_context`) work on their CDP endpoint; fall back to clearing cookies if not.
 3. **Baseline runs** — `compare` on 1 site per level; commit `bench/results.csv`.
-4. **Results page** — script that turns `bench/results.csv` into `docs/RESULTS.md` (never hand-edited).
-5. **Demo viewer** — a live view of `transcript.jsonl` (network log, agent steps, verdict) for the stage.
+4. **Results page** — the site's Results tab reads the CSV live; still wanted: a script that writes
+   `docs/RESULTS.md` from it for the submission (never hand-edited).
+5. **Deploy the website** — needs a host that can run Chromium (Fargate, Fly, Render, a VM), or
+   `ANAKIN_API_KEY` so the browser is remote and the server stays light. Set `WIREFORGE_PASSCODE`.
 6. **Wire submission** — map `spec.json` onto `POST /v1/wire/build-request` or whatever Anakin accepts.
 7. **Hardening** — bot walls (detect and report instead of looping), GraphQL persisted queries,
    tokens embedded in JS bundles.

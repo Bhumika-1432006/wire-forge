@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT / "out"
-RESULTS_CSV = ROOT / "bench" / "results.csv"
+OUT_DIR = Path(os.getenv("WIREFORGE_OUT_DIR", ROOT / "out"))
+RESULTS_CSV = Path(os.getenv("WIREFORGE_RESULTS_CSV", ROOT / "bench" / "results.csv"))
 
 # The model under test, and the previous Opus used as the baseline.
 FORGE_MODEL = os.getenv("WIREFORGE_MODEL", "claude-opus-5-5")
