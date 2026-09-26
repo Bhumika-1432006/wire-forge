@@ -21,6 +21,17 @@ def test_append_and_rows_roundtrip(tmp_path, monkeypatch):
     assert datetime.fromisoformat(rows[0]["t"]).tzinfo is not None
 
 
+def test_receipt_mirrors_log_in_scorecard_schema(tmp_path, monkeypatch):
+    monkeypatch.setattr(h2h, "OUT", tmp_path)
+    h2h._append("a.test", "submitted", http=201, goal="find things")
+    h2h._append("a.test", "status_change", status="pending")
+    h2h._append("a.test", "status_change", status="success", action_id="act_1")
+    receipt = json.loads((tmp_path / "a-test__anakin.json").read_text(encoding="utf-8"))
+    assert receipt["system"] == "anakin-build-request"
+    assert receipt["goal"] == "find things"
+    assert [e["status"] for e in receipt["events"]] == ["submitted", "pending", "shipped"]
+
+
 def test_report_computes_elapsed(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(h2h, "OUT", tmp_path)
     path = tmp_path / "a-test.jsonl"

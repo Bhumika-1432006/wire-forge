@@ -61,7 +61,29 @@ def _append(domain: str, event: str, **data) -> dict:
     with _log_path(domain).open("a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     print(f"[{row['t']}] {domain}: {event} {data.get('status', '')}", flush=True)
+    _write_receipt(domain)
     return row
+
+
+def _write_receipt(domain: str) -> None:
+    """Mirror the JSONL audit log into the receipt schema wireforge.scorecard renders (#16).
+
+    Anakin's terminal `success` becomes the scorecard's `shipped`; everything else keeps its name.
+    """
+    rows = _rows(_log_path(domain))
+    events = []
+    for r in rows:
+        status = r.get("status") or r["event"]
+        events.append({"status": "shipped" if status == "success" else status, "ts": r["t"]})
+    goal = next((r.get("goal") for r in rows if r.get("goal")), "")
+    receipt = {
+        "system": "anakin-build-request", "site": f"https://{domain}", "goal": goal, "events": events,
+        "action_type": "scraper", "cost_per_call": "25 credits/build; browser+proxy per call",
+        "verification": "opaque (status only)",
+        "failure": next((r["error"] for r in rows if r.get("error")), "none reported"),
+    }
+    (OUT / f"{domain.replace('.', '-')}__anakin.json").write_text(
+        json.dumps(receipt, indent=1), encoding="utf-8")
 
 
 def _rows(path: Path) -> list[dict]:
