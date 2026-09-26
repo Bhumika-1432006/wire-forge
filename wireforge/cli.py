@@ -1,5 +1,6 @@
 """wireforge forge <url> --goal "..."      build one action with the model under test
-wireforge compare <url> --goal "..."    same site with the baseline model, then the new one"""
+wireforge compare <url> --goal "..."    same site with the baseline model, then the new one
+wireforge check-browser [url]           verify the browser backend (Anakin CDP if ANAKIN_API_KEY is set)"""
 
 from __future__ import annotations
 
@@ -24,12 +25,18 @@ def main() -> None:
     vw.add_argument("action_id", help="an action_id from Anakin's public catalog (read-only)")
     vw.add_argument("--site", required=True, help="the source site the verifier compares the output against")
     vw.add_argument("--catalog", default="", help="catalog slug; looks the action up in the catalog's own list")
+    cb = sub.add_parser("check-browser")
+    cb.add_argument("url", nargs="?", default="https://example.com")
     args = ap.parse_args()
 
     if args.cmd == "verify-wire":
         from .wireaction import verify_wire
         print(json.dumps(verify_wire(args.action_id, args.site, catalog=args.catalog), indent=1))
         return
+
+    if args.cmd == "check-browser":
+        from .browsercheck import main as check_main
+        raise SystemExit(check_main(args.url))
 
     if args.cmd == "forge":
         result = forge_action(args.url, args.goal, args.model, headless=not args.headed)

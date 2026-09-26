@@ -41,3 +41,20 @@ def test_changed_columns_keep_the_old_csv_intact(tmp_path, monkeypatch):
     legacy = list(tmp_path.glob("results.legacy-*.csv"))
     assert len(legacy) == 1 and "https://a.test" in legacy[0].read_text(encoding="utf-8")
     assert csv_path.read_text(encoding="utf-8").splitlines()[0].split(",") == CSV_FIELDS
+
+
+def test_binary_request_body_does_not_drop_the_entry():
+    from wireforge.browser import BrowserSession
+
+    class Req:
+        post_data_buffer = b"\x1f\x8b\x08\x00binary"
+
+        @property
+        def post_data(self):
+            raise UnicodeDecodeError("utf-8", b"\x8b", 0, 1, "invalid start byte")
+
+    class TextReq:
+        post_data, post_data_buffer = '{"q": 1}', b'{"q": 1}'
+
+    assert BrowserSession._post_text(Req()) == "<binary body, 10 bytes>"
+    assert BrowserSession._post_text(TextReq()) == '{"q": 1}'
