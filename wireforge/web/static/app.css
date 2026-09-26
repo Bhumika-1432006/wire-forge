@@ -323,3 +323,14 @@ pre { margin: 8px 0 0; padding: 10px; background: var(--paper-2); border-radius:
   .row, .live i, .stages li.on { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* model comparison bars (data from /api/tally only) */
+.model-chart{margin-top:18px}
+.chart-title{font-size:14px;font-weight:700;margin:0 0 10px}
+.chart-title .small{font-weight:400;opacity:.65;font-size:12px}
+.bar-row{display:flex;align-items:center;gap:12px;margin:8px 0}
+.bar-label{flex:0 0 170px;font-size:12px;text-align:right}
+.bar-track{flex:1;background:rgba(127,127,127,.15);border-radius:6px;height:22px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#4d7cfe,#28a36a);border-radius:6px;transition:width .6s ease}
+.bar-value{flex:0 0 190px;font-size:12px;opacity:.85}
+@media (max-width:640px){.bar-label{flex-basis:110px}.bar-value{flex-basis:120px}}

@@ -42,9 +42,26 @@ async function loadTally() {
   });
   $("#home-tally-empty").hidden = t.runs > 0;
   const rows = Object.entries(t.models);
+  renderModelChart(rows);
   $("#home-models tbody").innerHTML = rows.length
     ? rows.map(([m, v]) => `<tr><td class="mono">${esc(m)}</td><td>${v.runs}</td><td>${v.verified}</td><td>${v.median_min ?? "—"}</td><td>${v.avg_repairs ?? "—"}</td></tr>`).join("")
     : `<tr><td colspan="5" class="empty">No comparison runs yet.</td></tr>`;
+}
+
+function renderModelChart(rows) {
+  // Bars come straight from /api/tally (which reads only bench/results.csv); no chart without data.
+  const box = $("#model-chart");
+  if (!box) return;
+  const withTime = rows.filter(([, v]) => v.median_min != null);
+  box.hidden = withTime.length < 1;
+  if (box.hidden) return;
+  const max = Math.max(...withTime.map(([, v]) => v.median_min));
+  $("#model-bars").innerHTML = withTime.map(([m, v]) => `
+    <div class="bar-row">
+      <span class="bar-label mono">${esc(m)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, (v.median_min / max) * 100)}%"></div></div>
+      <span class="bar-value">${esc(v.median_min)} min · ${v.verified}/${v.runs} verified</span>
+    </div>`).join("");
 }
 
 async function loadMeta() {
