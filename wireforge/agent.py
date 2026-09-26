@@ -33,6 +33,7 @@ class RunStats:
     input_tokens: int = 0
     output_tokens: int = 0
     cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
     wall_s: float = 0.0
     stop: str = ""
 
@@ -50,7 +51,8 @@ class Agent:
 
     def __post_init__(self) -> None:
         self.stats = RunStats(model=self.model)
-        self.client = anthropic.Anthropic(max_retries=4)
+        headers = {"anthropic-workspace-id": config.ANTHROPIC_WORKSPACE_ID} if config.ANTHROPIC_WORKSPACE_ID else None
+        self.client = anthropic.Anthropic(max_retries=4, default_headers=headers)
         self._by_name = {t.name: t for t in self.tools}
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -102,7 +104,9 @@ class Agent:
             u = resp.usage
             self.stats.input_tokens += u.input_tokens
             self.stats.output_tokens += u.output_tokens
+            # input_tokens counts only the uncached part; both cache figures are needed for real cost.
             self.stats.cache_read_tokens += getattr(u, "cache_read_input_tokens", 0) or 0
+            self.stats.cache_write_tokens += getattr(u, "cache_creation_input_tokens", 0) or 0
             # Append the whole content, thinking blocks included: the history must stay unedited.
             self.messages.append({"role": "assistant", "content": resp.content})
             for b in resp.content:
