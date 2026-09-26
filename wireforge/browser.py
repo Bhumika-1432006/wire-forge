@@ -190,6 +190,17 @@ class BrowserSession:
         if self._tracked(req):
             self._inflight = max(0, self._inflight - 1)
 
+    @staticmethod
+    def _post_text(req) -> str | None:
+        """Request body as text. req.post_data decodes as UTF-8 and raises on binary bodies
+        (gzip-compressed beacons, for example), which used to drop the whole entry."""
+        try:
+            data = req.post_data
+        except UnicodeDecodeError:
+            raw = req.post_data_buffer or b""
+            return f"<binary body, {len(raw)} bytes>"
+        return data[:BODY_LIMIT] if data else None
+
     def _on_response(self, resp) -> None:
         req = resp.request
         if req.resource_type not in ("xhr", "fetch", "document"):
@@ -210,7 +221,7 @@ class BrowserSession:
         entry = NetEntry(
             idx=len(self.net), method=req.method, url=req.url, status=resp.status,
             resource_type=req.resource_type, content_type=ctype, request_headers=headers,
-            post_data=(req.post_data or None) and req.post_data[:BODY_LIMIT], body=body,
+            post_data=self._post_text(req), body=body,
         )
         if len(self.net) < MAX_ENTRIES:
             self.net.append(entry)
