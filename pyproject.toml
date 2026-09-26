@@ -1,0 +1,22 @@
+[project]
+name = "wire-forge"
+version = "0.1.0"
+description = "Auto-generate Wire actions from any URL, powered by Claude Opus 5.5"
+requires-python = ">=3.11"
+dependencies = ["anthropic", "playwright", "httpx", "jsonschema", "python-dotenv"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+wireforge = "wireforge.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["wireforge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

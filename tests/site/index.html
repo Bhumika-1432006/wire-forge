@@ -1,0 +1,12 @@
+<!doctype html><html><body>
+<h1>Bus stops</h1>
+<input id="q" placeholder="stop name"><button id="go" onclick="search()">Search</button>
+<ul id="out"></ul>
+<script>
+async function search() {
+  const q = document.getElementById('q').value;
+  const r = await fetch('/api/stops.json?q=' + encodeURIComponent(q), {headers: {'x-client': 'demo'}});
+  const d = await r.json();
+  document.getElementById('out').innerHTML = d.stops.map(s => '<li>' + s.name + '</li>').join('');
+}
+</script></body></html>
