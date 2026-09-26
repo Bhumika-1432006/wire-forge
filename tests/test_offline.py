@@ -83,3 +83,16 @@ def test_spec_validation():
     errs = validate_spec(dict(GOOD_SPEC, action_id="Bad Id", type="delete",
                               return_schema={"type": "object"}))
     assert len(errs) == 3
+
+
+def test_anthropic_client_kwargs_workspace_header_and_missing_key(monkeypatch):
+    from wireforge import config
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(SystemExit, match="ANTHROPIC_API_KEY"):
+        config.anthropic_client_kwargs()
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(config, "ANTHROPIC_WORKSPACE_ID", "")
+    assert config.anthropic_client_kwargs()["default_headers"] == {}
+    monkeypatch.setattr(config, "ANTHROPIC_WORKSPACE_ID", "wrkspc_test")
+    assert config.anthropic_client_kwargs()["default_headers"] == {"anthropic-workspace-id": "wrkspc_test"}

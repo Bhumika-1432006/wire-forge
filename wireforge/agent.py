@@ -50,7 +50,7 @@ class Agent:
 
     def __post_init__(self) -> None:
         self.stats = RunStats(model=self.model)
-        self.client = anthropic.Anthropic(max_retries=4)
+        self.client = anthropic.Anthropic(**config.anthropic_client_kwargs())
         self._by_name = {t.name: t for t in self.tools}
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 

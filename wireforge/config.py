@@ -18,6 +18,18 @@ FORGE_MODEL = os.getenv("WIREFORGE_MODEL", "claude-opus-5-5")
 BASELINE_MODEL = os.getenv("WIREFORGE_BASELINE_MODEL", "claude-opus-5")
 EFFORT = os.getenv("WIREFORGE_EFFORT", "high")
 
+# Only needed when the Anthropic API key is not scoped to a workspace (the API answers 400 otherwise).
+ANTHROPIC_WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "")
+
+
+def anthropic_client_kwargs() -> dict:
+    """Arguments for anthropic.Anthropic(); fails early with a readable message instead of a 401 mid-run."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise SystemExit("ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add it.")
+    headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else {}
+    return {"max_retries": 4, "default_headers": headers}
+
+
 ANAKIN_API_KEY = os.getenv("ANAKIN_API_KEY", "")
 ANAKIN_CDP_URL = "wss://api.anakin.io/v1/browser-connect"
 
