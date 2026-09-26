@@ -105,13 +105,12 @@ function initSteps() {
 }
 
 const FAQ = [
-  ["Is it safe to point at a real shop?", "Write actions stop at the cart. Checkout, payment and order paths are refused by the probe tool and by the harness that runs every action, and no passwords are used anywhere."],
-  ["What does it actually produce?", "A Wire-shaped spec (action_id, type, parameters), a Python function that calls the site's backend with no browser, a strict return schema, test parameters that worked at build time, and an auto-generated test."],
-  ["How do you know the output is right?", "A second agent with a fresh browser runs the action at least twice, once with its own inputs, and compares concrete values against the rendered page. For add-to-cart it opens the cart with the action's own session cookies."],
-  ["What if the verifier says no?", "Its report goes back to the forge, which investigates and re-emits. After two repair rounds without a pass, the run is recorded as rejected, not quietly shipped."],
-  ["Which parts are the model, and which are code?", "The model explores the site, reads traffic and writes the action. Running it, schema checks, the checkout guard, the two-run rule and the verdict rules are plain code."],
-  ["How is the model comparison fair?", "Same sites, same goals, same tools, same limits, and the same verifier model judges both runs. Every run is a row in bench/results.csv."],
-  ["Does it need Anakin's Browser API?", "With an Anakin key it drives Anakin's hosted browser over CDP. Without one it falls back to a local headless Chromium, so the whole thing runs on a laptop."],
+  ["Is it safe to point at a real shop?", "Yes. It can add to a cart, never past it: checkout, payment and orders are blocked in code, and no passwords are ever used."],
+  ["What do I actually get?", "A ready-to-use API for the site: the spec, working code and a test, plus the verifier's report showing it's correct."],
+  ["How do you know the output is right?", "A second, independent AI runs it twice with its own inputs and compares the results with the live page."],
+  ["What if the check fails?", "The builder gets the report and fixes it. Still failing after two repairs? The run is recorded as rejected, never quietly shipped."],
+  ["How is the comparison fair?", "Same sites, same goals, same limits, same judge. Every number on this site comes from the recorded results file."],
+  ["What does it run on?", "A laptop. A real browser, Claude Opus 5.5 and plain Python. No special infrastructure."],
 ];
 function initFaq() {
   const q = $("#faq-q"), a = $("#faq-a");
