@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wire Forge — any website, an API in minutes</title>
+<meta name="description" content="Wire Forge watches a website's own network traffic, finds the JSON endpoints behind it, writes a tested Wire action, and proves it against the live page before it ships.">
+<meta name="theme-color" content="#FAF7EE">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<a class="banner" href="#safety" id="banner">Opus Build Day · Breakthrough track · <span data-meta="version">v0.1.0</span> · Board passcode in the submission ›</a>
+
+<header class="nav-wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="#home"><span class="dot"></span><b>Wire</b>&nbsp;Forge</a>
+    <div class="tabs" role="tablist">
+      <a href="#home" data-route="home">Home</a>
+      <a href="#board" data-route="board">Forge Board</a>
+      <a href="#actions" data-route="actions">Actions</a>
+      <a href="#results" data-route="results">Results</a>
+      <a href="#safety" data-route="safety">Safety</a>
+    </div>
+    <div class="nav-meta mono">
+      <span class="live"><i></i>live</span>
+      <span data-meta="browser">—</span> · <span data-meta="version">—</span>
+      <span id="clock"></span>
+    </div>
+  </nav>
+</header>
+
+<main>
+<!-- =============================================================== HOME -->
+<section class="view" id="view-home">
+  <div class="hero">
+    <p class="eyebrow">Wire Forge</p>
+    <h1>Any website,<br><em>an API in minutes.</em></h1>
+    <p class="lede">Wire Forge watches a site's own network traffic, finds the JSON endpoints behind it, writes a tested Wire action, and has a second agent prove it against the live page before it ships.</p>
+    <div class="cta">
+      <a class="btn primary" href="#board">Open the Forge Board</a>
+      <a class="btn ghost" href="#how">How it works ↓</a>
+    </div>
+
+    <figure class="hero-board" aria-label="Illustration of a Forge Board run">
+      <div class="hb-bar">snitch.com · add a shirt in a size to the cart</div>
+      <div class="hb-body">
+        <ol class="stages">
+          <li class="ok">Trace</li><li class="ok">Endpoint</li><li class="ok">Schema</li><li class="ok">Test</li><li class="on">Verify</li>
+        </ol>
+        <div class="hb-grid">
+          <div class="hb-net mono">
+            <p><b>GET</b> /products/oversized-linen-shirt.js <span>200</span></p>
+            <p><b>POST</b> /cart/add.js <span>200</span></p>
+            <p><b>GET</b> /cart.js <span>200</span></p>
+            <p class="dim"><b>POST</b> /checkout <span class="no">refused</span></p>
+          </div>
+          <div class="hb-spec mono">
+            <p class="k">snitch_add_to_cart</p>
+            <p>type <span>write</span></p>
+            <p>params <span>product · size · quantity</span></p>
+            <p>returns <span>cart { items, total }</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="hb-pill">verifier · opens the cart with the action's own session</div>
+      <figcaption>Illustration of a run. Real runs, with every request and check, are on the Forge Board.</figcaption>
+    </figure>
+  </div>
+
+  <div class="marquee" aria-label="Built on">
+    <span class="label">Built on</span>
+    <div class="track"><div class="row">
+      <span>Anakin Wire</span><span>Anakin Browser API</span><span>Claude Opus 5.5</span><span>Playwright</span><span>Chrome DevTools Protocol</span><span>httpx</span><span>JSON Schema</span><span>FastAPI</span>
+      <span aria-hidden="true">Anakin Wire</span><span aria-hidden="true">Anakin Browser API</span><span aria-hidden="true">Claude Opus 5.5</span><span aria-hidden="true">Playwright</span><span aria-hidden="true">Chrome DevTools Protocol</span><span aria-hidden="true">httpx</span><span aria-hidden="true">JSON Schema</span><span aria-hidden="true">FastAPI</span>
+    </div></div>
+  </div>
+
+  <section class="band">
+    <h2><em>Days</em> to minutes.</h2>
+    <p class="sub">Live numbers from this deployment's results file. Nothing here is typed by hand.</p>
+    <div class="tally" id="home-tally">
+      <div><strong data-t="verified">—</strong><span>actions verified</span></div>
+      <div><strong data-t="median_min" data-unit=" min">—</strong><span>median, URL to verified action</span></div>
+      <div><strong data-t="sites">—</strong><span>sites forged</span></div>
+      <div><strong data-t="write_actions">—</strong><span>write actions proven</span></div>
+    </div>
+    <p class="empty-note" id="home-tally-empty" hidden>No runs recorded yet. The first run on the Forge Board fills these in.</p>
+    <div class="vs">
+      <div class="vs-card small"><span>Hand-built</span><strong>days</strong><em>“submit a request, most ship within days”</em></div>
+      <div class="vs-card big"><span>Wire Forge</span><strong data-t="median_min" data-unit=" min">—</strong><em>from a URL to an action a second agent has checked against the live page</em></div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <p class="eyebrow">How it works</p>
+    <h2>Three steps, <em>all of them checked.</em></h2>
+    <div class="steps">
+      <ol class="step-list" id="step-list">
+        <li class="on" data-step="0">Trace it</li>
+        <li data-step="1">Forge it</li>
+        <li data-step="2">Prove it</li>
+      </ol>
+      <div class="step-body">
+        <article data-step="0">
+          <h3>Trace it</h3>
+          <p>The forge agent uses the site in a real browser, the way a person would: search, pick, add. Every XHR and fetch the page fires is recorded with its headers, body and response, so the agent reads the site's own backend instead of guessing from HTML.</p>
+          <p class="src mono">wireforge/browser.py · BrowserSession._on_response</p>
+        </article>
+        <article data-step="1">
+          <h3>Forge it</h3>
+          <p>It proves each endpoint with direct HTTP calls, changing one parameter at a time, then writes the action and its return schema. Every emit is executed on the spot and schema-checked, so a broken action is fixed before anyone else sees it.</p>
+          <p class="src mono">wireforge/forge.py · Forge.emit</p>
+        </article>
+        <article data-step="2">
+          <h3>Prove it</h3>
+          <p>A separate verifier, in a fresh browser with no access to the forge's reasoning, runs the action with its own inputs and compares names, prices and counts with the rendered page. For add-to-cart it opens the cart with the action's own session. Rejected actions go back for repair.</p>
+          <p class="src mono">wireforge/verifier.py · Verifier.submit</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Built around <em>proof, not plausibility.</em></h2>
+    <div class="cards two">
+      <div class="card"><h3>Evidence before code</h3><p>The agent writes nothing until it has watched the endpoint answer in the browser and answered again to its own direct call with a changed parameter.</p></div>
+      <div class="card"><h3>Emitted means executed</h3><p>Every emit runs in a separate process and is validated against a strict return schema. The agent cannot finish on an action that did not pass.</p></div>
+      <div class="card"><h3>Verified means compared</h3><p>At least two runs, at least three values checked against the page. An unexplained mismatch turns a pass into a fail, whatever the verifier wrote.</p></div>
+      <div class="card"><h3>Two agents, one direction</h3><p>The forge cannot judge its own work. The verifier cannot edit code. Its report is the only thing that flows back.</p></div>
+      <div class="card wide"><h3>Stops at the cart</h3><p>Checkout, payment and order endpoints are refused in the probe tool and in the action harness itself, so a write action can add to a cart and read it back, and nothing more.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">The demo ladder</p>
+    <h2>Four levels, <em>one pipeline.</em></h2>
+    <div class="cards four">
+      <div class="card"><p class="tag">Level 1</p><h3>One endpoint</h3><p>BMTC routes, VTU results. Input in, JSON out.</p></div>
+      <div class="card"><p class="tag">Level 2</p><h3>Chained calls</h3><p>RedBus, IRCTC. Ids from one response feed the next request.</p></div>
+      <div class="card"><p class="tag">Level 3</p><h3>Hidden state</h3><p>Myntra, MakeMyTrip. Pagination, cursors and session-bound APIs.</p></div>
+      <div class="card accent"><p class="tag">Level 4</p><h3>Write actions</h3><p>Snitch, boAt, Mokobara. Resolve the size variant, add to cart, prove it in the cart.</p></div>
+    </div>
+    <p class="fine">None of these sites were in the Wire catalog when we checked it on 26 September 2026.</p>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">Breakthrough</p>
+    <h2>Same sites, <em>two models.</em></h2>
+    <p class="section-sub">Every site runs through the same pipeline with the previous Opus and with Opus 5.5. Both are judged by the same verifier.</p>
+    <div class="table-wrap"><table class="data" id="home-models">
+      <thead><tr><th>Model</th><th>Runs</th><th>Verified</th><th>Median min</th><th>Avg repair rounds</th></tr></thead>
+      <tbody><tr><td colspan="5" class="empty">No comparison runs yet.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section class="section faq">
+    <p class="eyebrow">FAQs</p>
+    <h2>Good <em>questions.</em></h2>
+    <div class="faq-grid">
+      <ul class="faq-q" id="faq-q"></ul>
+      <div class="faq-a" id="faq-a"></div>
+    </div>
+  </section>
+
+  <section class="final">
+    <h2>Got a site <em>without an API?</em></h2>
+    <div class="cta"><a class="btn primary" href="#board">Open the Forge Board</a><a class="btn ghost" href="https://github.com/thegoodengineers/wire-forge">Read the code</a></div>
+  </section>
+</section>
+
+<!-- =============================================================== BOARD -->
+<section class="view" id="view-board" hidden>
+  <div class="board">
+    <aside class="board-left">
+      <div class="mini-tally" id="board-tally">
+        <div><strong data-t="runs">—</strong><span>runs</span></div>
+        <div><strong data-t="verified">—</strong><span>verified</span></div>
+        <div><strong data-t="median_min" data-unit=" min">—</strong><span>median</span></div>
+        <div><strong data-t="write_actions">—</strong><span>writes</span></div>
+      </div>
+
+      <form class="panel" id="run-form" autocomplete="off">
+        <p class="panel-title">Forge an action</p>
+        <label>Website URL<input name="url" type="url" required placeholder="https://www.snitch.com"></label>
+        <label>Goal<textarea name="goal" rows="2" required minlength="5" placeholder="add a shirt in a given size to the cart"></textarea></label>
+        <div class="presets" id="presets"></div>
+        <div class="row2">
+          <label>Model<select name="model" id="model-select"></select></label>
+          <label>Passcode<input name="passcode" type="password" placeholder="from the submission"></label>
+        </div>
+        <button class="btn primary full" type="submit" id="run-btn">Start the forge</button>
+        <p class="form-msg" id="form-msg" role="status"></p>
+      </form>
+
+      <div class="panel">
+        <p class="panel-title">Recent runs</p>
+        <ul class="run-list" id="run-list"><li class="empty">No runs yet.</li></ul>
+      </div>
+    </aside>
+
+    <section class="board-right panel" id="live">
+      <div class="live-head">
+        <div>
+          <p class="panel-title">Live run</p>
+          <h3 id="live-title">Pick a run, or start one.</h3>
+          <p class="mono small" id="live-sub"></p>
+        </div>
+        <span class="status" id="live-status"></span>
+      </div>
+      <ol class="stages big" id="live-stages">
+        <li data-s="trace">Trace</li><li data-s="endpoint">Endpoint</li><li data-s="emit">Schema + test</li><li data-s="verify">Verify</li><li data-s="done">Verdict</li>
+      </ol>
+      <div class="live-grid">
+        <div class="feed" id="feed" aria-live="polite"></div>
+        <div class="side">
+          <div class="side-card" id="spec-card"><p class="panel-title">Action</p><p class="empty">Appears when the forge emits.</p></div>
+          <div class="side-card" id="verdict-card"><p class="panel-title">Verifier</p><p class="empty">Appears when the verifier decides.</p></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- =============================================================== ACTIONS -->
+<section class="view" id="view-actions" hidden>
+  <div class="page-head"><p class="eyebrow">Actions</p><h2>Everything the forge <em>has built.</em></h2></div>
+  <div class="actions-grid" id="actions-grid"></div>
+  <div class="detail panel" id="action-detail" hidden></div>
+</section>
+
+<!-- =============================================================== RESULTS -->
+<section class="view" id="view-results" hidden>
+  <div class="page-head"><p class="eyebrow">Results</p><h2>Every run, <em>as recorded.</em></h2>
+    <p class="section-sub">Straight from <span class="mono">bench/results.csv</span>. One row per run, written by the pipeline, never edited.</p></div>
+  <div class="table-wrap"><table class="data" id="results-table">
+    <thead><tr><th>When</th><th>Site</th><th>Model</th><th>Outcome</th><th>Action</th><th>Emits</th><th>Repairs</th><th>Turns</th><th>Checks</th><th>Minutes</th></tr></thead>
+    <tbody><tr><td colspan="10" class="empty">No runs recorded yet.</td></tr></tbody>
+  </table></div>
+</section>
+
+<!-- =============================================================== SAFETY -->
+<section class="view" id="view-safety" hidden>
+  <div class="page-head"><p class="eyebrow">Safety</p><h2>What it will <em>never do.</em></h2></div>
+  <div class="cards two">
+    <div class="card"><h3>No checkout, no payment, no orders</h3><p>Paths containing checkout, payment, /pay, place-order or purchase are refused by the probe tool and by the harness that runs every action. Write actions end at the cart.</p><p class="src mono">config.BLOCKED_PATH_WORDS · probe.blocked · harness._guard</p></div>
+    <div class="card"><h3>No passwords</h3><p>Demo sites are public or guest-cart only. Actions may not hard-code cookies or tokens copied from the browser; they fetch what they need at run time.</p><p class="src mono">forge.SYSTEM</p></div>
+    <div class="card"><h3>Starting a run needs the passcode</h3><p>Reading the board, actions and results is public. Starting a run drives a real browser and spends credits, so it needs the passcode from the submission, and only one run happens at a time.</p><p class="src mono">web/server.py · start_run</p></div>
+    <div class="card"><h3>Untrusted pages stay data</h3><p>Everything a website returns is shown as text on this board, never rendered as HTML, and it never changes what the pipeline is allowed to do.</p><p class="src mono">static/app.js · esc()</p></div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <span><b>Wire</b> Forge · the good engineers</span>
+  <a href="https://github.com/thegoodengineers/wire-forge">GitHub</a>
+  <a href="https://github.com/thegoodengineers/wire-forge/blob/main/docs/ARCHITECTURE.md">Architecture</a>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
