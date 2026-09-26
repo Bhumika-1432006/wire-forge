@@ -56,6 +56,32 @@ def test_isolated_session_does_not_share_cookies(site_url):
         assert b.cookies()[0]["name"] == "sid"
 
 
+class _NoNewContext:
+    """Stands in for a remote CDP browser that refuses to create extra contexts."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def new_context(self, *a, **kw):
+        raise RuntimeError("Browser.createBrowserContext not supported")
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+def test_isolated_falls_back_to_cleared_cookies_and_restores_parent(site_url):
+    with BrowserSession() as b:
+        b.goto(site_url + "/index.html")
+        b.add_cookies([{"name": "sid", "value": "1", "url": site_url}])
+        b.browser = _NoNewContext(b.browser)
+        with b.isolated() as v:
+            assert v._shared_context
+            assert v.cookies() == []  # the verifier must not see the forge's session
+            v.goto(site_url + "/index.html")
+        assert [c["name"] for c in b.cookies()] == ["sid"]  # forge's session is back
+        assert len(b.context.pages) == 1  # verifier page was closed
+
+
 def test_harness_runs_action_and_schema_check(tmp_path, site_url):
     action = tmp_path / "action.py"
     action.write_text(
@@ -83,3 +109,27 @@ def test_spec_validation():
     errs = validate_spec(dict(GOOD_SPEC, action_id="Bad Id", type="delete",
                               return_schema={"type": "object"}))
     assert len(errs) == 3
+
+
+def test_results_report_pairs_models_and_flags_incomplete(tmp_path):
+    import csv
+
+    from wireforge import config
+    from wireforge.pipeline import CSV_FIELDS
+    from wireforge.report import load, render
+
+    def row(site, model, outcome):
+        return {**dict.fromkeys(CSV_FIELDS, ""), "site": site, "goal": "g", "model": model, "outcome": outcome}
+
+    path = tmp_path / "results.csv"
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        w.writerow(row("https://a.test", config.BASELINE_MODEL, "no_working_action"))
+        w.writerow(row("https://a.test", config.FORGE_MODEL, "verified"))
+        w.writerow(row("https://b.test", config.FORGE_MODEL, "verified"))
+    md = render(load(path))
+    a, b = md.split("## https://b.test")
+    assert "no_working_action" in a and "verified" in a and "Incomplete" not in a
+    assert "Incomplete" in b
+    assert "No runs recorded yet" in render(load(tmp_path / "missing.csv"))
