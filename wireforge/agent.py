@@ -50,7 +50,9 @@ class Agent:
 
     def __post_init__(self) -> None:
         self.stats = RunStats(model=self.model)
-        self.client = anthropic.Anthropic(max_retries=4)
+        # Org-scoped keys (e.g. hackathon credit grants) need the workspace id on every request.
+        headers = {"anthropic-workspace-id": config.WORKSPACE_ID} if config.WORKSPACE_ID else None
+        self.client = anthropic.Anthropic(max_retries=4, default_headers=headers)
         self._by_name = {t.name: t for t in self.tools}
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 
