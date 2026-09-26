@@ -23,11 +23,12 @@ def main() -> None:
     vw = sub.add_parser("verify-wire", help="run a catalog Wire action through our independent verifier")
     vw.add_argument("action_id", help="an action_id from Anakin's public catalog (read-only)")
     vw.add_argument("--site", required=True, help="the source site the verifier compares the output against")
+    vw.add_argument("--catalog", default="", help="catalog slug; looks the action up in the catalog's own list")
     args = ap.parse_args()
 
     if args.cmd == "verify-wire":
         from .wireaction import verify_wire
-        print(json.dumps(verify_wire(args.action_id, args.site), indent=1))
+        print(json.dumps(verify_wire(args.action_id, args.site, catalog=args.catalog), indent=1))
         return
 
     if args.cmd == "forge":

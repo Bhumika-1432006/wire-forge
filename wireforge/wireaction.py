@@ -37,15 +37,31 @@ import json  # noqa: E402  (used in the error path above)
 '''
 
 
-def resolve(action_id: str) -> dict:
-    """Find the action's parameter schema in the public catalog (no key needed)."""
+def resolve(action_id: str, catalog: str = "") -> dict:
+    """Find the action's parameter schema in the public catalog (no key needed).
+
+    /wire/resolve matches intent text, not ids, so given a catalog slug we read the catalog's
+    full action list instead; otherwise we resolve on the id with underscores as spaces.
+    """
     with httpx.Client(timeout=60) as c:
-        r = c.get(f"{API}/wire/resolve", params={"q": action_id})
-        r.raise_for_status()
-        for hit in r.json().get("results", []):
-            if hit.get("action_id") == action_id:
-                return hit
-    raise SystemExit(f"action {action_id!r} not found in the public catalog (GET /v1/wire/resolve)")
+        if catalog:
+            r = c.get(f"{API}/wire/catalog/{catalog}")
+            r.raise_for_status()
+            for a in r.json().get("actions", []):
+                if a.get("action_id") == action_id:
+                    req = [p for p in a.get("parameters", []) if p.get("required")]
+                    opt = [p for p in a.get("parameters", []) if not p.get("required")]
+                    return {"action_id": action_id, "catalog": catalog,
+                            "credits": a.get("credits_per_call"),
+                            "params": {"required": req, "optional": opt}}
+        else:
+            r = c.get(f"{API}/wire/resolve", params={"q": action_id.replace("_", " ")})
+            r.raise_for_status()
+            for hit in r.json().get("results", []):
+                if hit.get("action_id") == action_id:
+                    return hit
+    where = f"catalog {catalog!r}" if catalog else "GET /v1/wire/resolve (pass --catalog <slug> to search a catalog directly)"
+    raise SystemExit(f"action {action_id!r} not found in {where}")
 
 
 def build_action_dir(action_id: str, site: str, run_dir: Path, hit: dict) -> Path:
@@ -78,7 +94,7 @@ def build_action_dir(action_id: str, site: str, run_dir: Path, hit: dict) -> Pat
     return d
 
 
-def verify_wire(action_id: str, site: str, verifier_model: str | None = None) -> dict:
+def verify_wire(action_id: str, site: str, verifier_model: str | None = None, catalog: str = "") -> dict:
     from .browser import BrowserSession  # imported here: heavy, and offline tests never need it
     from .verifier import Verifier
 
@@ -86,7 +102,7 @@ def verify_wire(action_id: str, site: str, verifier_model: str | None = None) ->
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = config.OUT_DIR / f"wire-catalog__{action_id}__{stamp}"
     run_dir.mkdir(parents=True, exist_ok=True)
-    hit = resolve(action_id)
+    hit = resolve(action_id, catalog)
     action_dir = build_action_dir(action_id, site, run_dir, hit)
     (run_dir / "request.json").write_text(json.dumps(
         {"url": site, "goal": f"verify catalog action {action_id}", "model": "anakin-wire-catalog",
